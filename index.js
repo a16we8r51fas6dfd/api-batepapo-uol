@@ -30,8 +30,6 @@ const messageSchema = joi.object({
 
 server.post('/participants', async (req, res) => {
     const participant = req.body.name    
-
-    console.log(participant)
     
     const validation = participantSchema.validate(req.body)
 
@@ -68,7 +66,6 @@ server.get('/participants', async (req, res) => {
         const participants = await db.collection('participants').find().toArray()
         res.send(participants)
     } catch (error) {
-        console.log("ficou perdidinho")
         res.sendStatus(500)
     }
 })
@@ -146,6 +143,28 @@ server.post('/status', async (req, res) => {
     }
 })
 
+setInterval( async () => {
+    try {
+        const participantsArray = await db.collection('participants').find({}).toArray()
+
+        for(const participant of participantsArray) {
+            if(participant.lastStatus < Date.now() - 10000) {
+                await db.collection('participants').deleteOne({_id: participant._id})
+                await db.collection('messages').insertOne({
+                    from: participant.name,
+                    to: "Todos",
+                    text: "sai da sala...",
+                    type: "status",
+                    time: dayjs().format('HH:mm:ss')
+                })
+            }
+        }
+        
+    } catch (error) {
+        console.log(error)
+    }
+}, 15000)
+
 server.listen(5000, () => {
-    console.log('shhhh')
+    console.log('server lansando a brabinha na porta 5000')
 })
