@@ -57,7 +57,7 @@ server.post('/participants', async (req, res) => {
         
         await db.collection('participants').insertOne({ name: participant, lastStatus: Date.now()})
         await db.collection('messages').insertOne({
-            from: participant.name,
+            from: participant,
             to: 'Todos',
             text: 'entra na sala...',
             type: 'status',
@@ -110,6 +110,30 @@ server.post('/messages', async (req, res) => {
         })
         res.sendStatus(201)
     } catch (error) {
+        res.sendStatus(500)
+    }
+})
+
+server.get('/messages', async (req, res) => {
+    const user = req.headers.user
+    const limit = parseInt(req.query.limit)
+
+    try {
+        const messages = await db.collection('messages').find({
+            $or: [
+                {to: req.headers.user},
+                {type: "message"},
+                {type: "status"}
+            ]
+        }).toArray()
+
+        if(limit){
+            res.send(messages.slice(-limit))
+        } else {
+            res.send(messages)
+        }
+    } catch (error) {
+        console.log("ficou perdidinho")
         res.sendStatus(500)
     }
 })
