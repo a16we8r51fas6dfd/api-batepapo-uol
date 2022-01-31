@@ -28,8 +28,6 @@ const messageSchema = joi.object({
     type: joi.string().valid('message', 'private_message').required()
 })
 
-/* participants routes */
-
 server.post('/participants', async (req, res) => {
     const participant = req.body.name    
 
@@ -42,15 +40,11 @@ server.post('/participants', async (req, res) => {
         return
     }
  
-    
     try {
         
         const participantExists = await db.collection('participants').findOne({name: req.body.name})
-        
-        console.log(participantExists)
     
         if(participantExists) {
-            console.log("achamo o trem")
             res.sendStatus(409)
             return
         }
@@ -89,8 +83,6 @@ server.delete('/participants', async (req, res) => {
     }
 })
 
-/* messages routes */
-
 server.post('/messages', async (req, res) => {
     const user = req.headers.user
     const message = req.body
@@ -115,7 +107,6 @@ server.post('/messages', async (req, res) => {
 })
 
 server.get('/messages', async (req, res) => {
-    const user = req.headers.user
     const limit = parseInt(req.query.limit)
 
     try {
@@ -133,14 +124,27 @@ server.get('/messages', async (req, res) => {
             res.send(messages)
         }
     } catch (error) {
-        console.log("ficou perdidinho")
         res.sendStatus(500)
     }
 })
 
+server.post('/status', async (req, res) => {
+    const user = req.headers.user
 
+    try {
+        const participant = await db.collection('participants').findOne({name: user})
 
+        if (!participant) {
+            res.sendStatus(404)
+        }
 
+        await db.collection('participants').updateOne({_id: participant._id}, {$set: {lastStatus: Date.now()}})
+        
+        res.sendStatus(200)
+    } catch (error) {
+        res.sendStatus(500)
+    }
+})
 
 server.listen(5000, () => {
     console.log('shhhh')
